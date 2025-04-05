@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-async def generate_content(system_prompt: str, user_prompt: str, schema: Dict[str, Any] = None) -> str:
+async def generate_content(system_prompt: str, user_prompt: str, 
+                           schema: Dict[str, Any] = None, schema_name: str = None) -> str:
     """
     Generate content using OpenAI's API with the given prompts and JSON schema
     
@@ -36,15 +37,16 @@ async def generate_content(system_prompt: str, user_prompt: str, schema: Dict[st
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "temperature": 0.7,  # Moderate creativity
-            "max_tokens": 1000,  # Adjust as needed
+           # "temperature": 0.7,  # Moderate creativity
+           # "max_tokens": 1000,  # Adjust as needed
         }
         
         # Add structured output if schema is provided
-        if schema:
+        if schema and schema_name:
             params["text"] = {
                 "format": {
                     "type": "json_schema",
+                    "name": schema_name,
                     "schema": schema,
                     "strict": True
                 }

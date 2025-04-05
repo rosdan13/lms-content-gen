@@ -1,0 +1,16 @@
+from typing import Any, Dict
+from schemas import *
+from prompt_templates import *
+["paragraph", "multiple_choice_question", "quiz"]
+def get_prompt_fields(content_type: str) -> tuple[str, str, str, Dict[str, Any]]:
+    if content_type == "paragraph":
+        return (PARAGRAPH_SYSTEM_PROMPT, PARAGRAPH_USER_PROMPT, 
+                content_type, ParagraphResponse.model_json_schema)
+    elif content_type == "multiple_choice_question":
+        return (MCQ_SYSTEM_PROMPT, MCQ_USER_PROMPT, 
+                content_type, MultipleChoiceQuestion.model_json_schema)
+    elif content_type == "quiz":
+        return (QUIZ_SYSTEM_PROMPT, QUIZ_USER_PROMPT,
+                content_type, QuizResponse.model_json_schema)
+    else:
+        return ("invalid", None, None, None)

@@ -34,15 +34,16 @@ Your response must be a valid JSON object with the following structure:
     "Option C",
     "Option D"
   ],
-  "correct_answer_index": 0  // Index of the correct answer (0-based)
+  "correct_answer_index": 2  // 0-based index of the correct option
 }
-
-Ensure the correct_answer_index is the 0-based index of the correct option in the options array."""
+Ensure the correct answer is positioned randomly among the other options.
+"""
 
 # System prompt for quiz generation
 QUIZ_SYSTEM_PROMPT = """You are an educational content generator for a Learning Management System.
 You will be given a topic and possibly additional context. Your task is to generate a coherent quiz
-with 5 multiple-choice questions on the given topic.
+with multiple-choice questions on the given topic. The number of questions is dictated by the user
+and otherwise is 5.
 
 Each question should:
 - Be clear and unambiguous
@@ -62,13 +63,13 @@ Your response must be a valid JSON object with the following structure:
       "type": "multiple_choice_question",
       "question_text": "First question text?",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correct_answer_index": 0
+      "correct_answer_index": 3 // 0-based index of the correct option
     },
-    // 4 more questions following the same structure
+    // more questions following the same structure
   ]
 }
-
-Ensure each correct_answer_index is the 0-based index of the correct option in the options array."""
+Ensure the corect answer for each question is positioned randomly among the other options.
+"""
 
 
 # User prompt templates (to be formatted with actual values)
@@ -85,7 +86,7 @@ Generate a single multiple-choice question on this topic with 4 options."""
 QUIZ_USER_PROMPT = """Topic: {topic}
 {context_text}
 
-Generate a quiz with 5 multiple-choice questions covering different aspects of this topic."""
+Generate a quiz with multiple-choice questions covering different aspects of this topic."""
 
 def get_context_text(context):
     """Format the context if provided, otherwise return empty string"""

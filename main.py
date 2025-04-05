@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
 from dotenv import load_dotenv
 
+from prompt_handler import get_prompt_fields
 from schemas import ContentRequest, ParagraphResponse, MultipleChoiceQuestion, QuizResponse
 from prompt_templates import (
     PARAGRAPH_SYSTEM_PROMPT, MCQ_SYSTEM_PROMPT, QUIZ_SYSTEM_PROMPT,
@@ -48,6 +49,7 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
     - **context**: Optional additional instructions or context
     """
     try:
+        system_prompt, user_prompt, schema_name, schema = get
         # Validate content_type
         if request.content_type not in ["paragraph", "multiple_choice_question", "quiz"]:
             logger.error(f"Invalid content_type: {request.content_type}")
@@ -83,9 +85,10 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
                 context_text=context_text
             )
             schema = QUIZ_SCHEMA
-            
+        schema_name = request.content_type
+ 
         # Generate content with structured output schema
-        content = await generate_content(system_prompt, user_prompt, schema)
+        content = await generate_content(system_prompt, user_prompt, schema, schema_name)
         
         # Parse the JSON response
         response_json = parse_json_response(content)
