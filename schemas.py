@@ -13,7 +13,7 @@ class ParagraphResponse(BaseModel):
     content: str
 
     class Config:
-        extra = "forbid"  # This makes additionalProperties=False in JSON Schema
+        extra = "forbid"  # This makes additionalProperties = False in JSON Schema
 
 class MultipleChoiceQuestion(BaseModel):
     type: Literal["multiple_choice_question"]
@@ -21,11 +21,11 @@ class MultipleChoiceQuestion(BaseModel):
     options: List[str]
     correct_answer_index: int
     class Config:
-        extra = "forbid"  # This makes additionalProperties=False in JSON Schema
+        extra = "forbid"  # This makes additionalProperties = False in JSON Schema
 
 class QuizResponse(BaseModel):
     type: Literal["quiz"]
     title: str
     questions: List[MultipleChoiceQuestion]
     class Config:
-        extra = "forbid"  # This makes additionalProperties=False in JSON Schema
+        extra = "forbid"  # This makes additionalProperties = False in JSON Schema
