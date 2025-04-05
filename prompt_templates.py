@@ -24,18 +24,6 @@ The question should:
 - Have exactly one correct answer
 - Have plausible distractors (incorrect options)
 
-Your response must be a valid JSON object with the following structure:
-{
-  "type": "multiple_choice_question",
-  "question_text": "The question text goes here?",
-  "options": [
-    "Option A",
-    "Option B",
-    "Option C",
-    "Option D"
-  ],
-  "correct_answer_index": 2  // 0-based index of the correct option
-}
 Ensure the correct answer is positioned randomly among the other options.
 """
 
@@ -54,21 +42,7 @@ Each question should:
 
 The questions should cover different aspects or subtopics of the main topic.
 
-Your response must be a valid JSON object with the following structure:
-{
-  "type": "quiz",
-  "title": "Quiz title related to the topic",
-  "questions": [
-    {
-      "type": "multiple_choice_question",
-      "question_text": "First question text?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correct_answer_index": 3 // 0-based index of the correct option
-    },
-    // more questions following the same structure
-  ]
-}
-Ensure the corect answer for each question is positioned randomly among the other options.
+Ensure the that for each question the corect answer is positioned randomly among the other options.
 """
 
 
@@ -87,9 +61,3 @@ QUIZ_USER_PROMPT = """Topic: {topic}
 {context_text}
 
 Generate a quiz with multiple-choice questions covering different aspects of this topic."""
-
-def get_context_text(context):
-    """Format the context if provided, otherwise return empty string"""
-    if context:
-        return f"Context: {context}"
-    return ""

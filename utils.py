@@ -54,13 +54,15 @@ async def generate_content(system_prompt: str, user_prompt: str,
         
         # Make the API call
         response = client.responses.create(**params)
-        
         # Check for refusals or incomplete responses
         if response.status == "incomplete":
             reason = response.incomplete_details.reason
             logger.error(f"Incomplete response: {reason}")
             raise Exception(f"Failed to generate complete content: {reason}")
-            
+        if(response.output[0].content[0].type == "refusal"):
+            logger.error(f"Model refused to answer")
+            raise Exception(f"Model refused to answer: {response.output[0].content[0].refusal}")
+        
         # Get the content
         content = response.output_text
         logger.info(f"Content generated successfully: {len(content)} chars")

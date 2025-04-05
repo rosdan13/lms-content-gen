@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 # Request Models
@@ -9,16 +9,23 @@ class ContentRequest(BaseModel):
 
 # Response Models
 class ParagraphResponse(BaseModel):
-    type: str = "paragraph"
+    type: Literal["paragraph"]
     content: str
 
+    class Config:
+        extra = "forbid"  # This makes additionalProperties=False in JSON Schema
+
 class MultipleChoiceQuestion(BaseModel):
-    type: str = "multiple_choice_question"
+    type: Literal["multiple_choice_question"]
     question_text: str
     options: List[str]
     correct_answer_index: int
+    class Config:
+        extra = "forbid"  # This makes additionalProperties=False in JSON Schema
 
 class QuizResponse(BaseModel):
-    type: str = "quiz"
+    type: Literal["quiz"]
     title: str
     questions: List[MultipleChoiceQuestion]
+    class Config:
+        extra = "forbid"  # This makes additionalProperties=False in JSON Schema

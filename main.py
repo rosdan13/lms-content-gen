@@ -5,16 +5,9 @@ from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
 from dotenv import load_dotenv
 
-from schemas import ContentRequest, ParagraphResponse, MultipleChoiceQuestion, QuizResponse
-from prompt_templates import (
-    PARAGRAPH_SYSTEM_PROMPT, MCQ_SYSTEM_PROMPT, QUIZ_SYSTEM_PROMPT,
-    PARAGRAPH_USER_PROMPT, MCQ_USER_PROMPT, QUIZ_USER_PROMPT,
-    get_context_text
-)
+from prompt_handler import get_prompt_fields, get_permitted_types, get_context_text
+from schemas import ContentRequest
 from utils import generate_content, parse_json_response
-from json_schemas import PARAGRAPH_SCHEMA, MCQ_SCHEMA, QUIZ_SCHEMA
-
-from prompt_handler import get_prompt_fields
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,7 +31,6 @@ def check_api_key():
 
 @app.post(
     "/generate",
-    response_model=Union[ParagraphResponse, MultipleChoiceQuestion, QuizResponse],
     summary="Generate educational content"
 )
 async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
@@ -50,43 +42,22 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
     - **context**: Optional additional instructions or context
     """
     try:
-        system_prompt, user_prompt, schema_name, schema = get
+        # Get the right prompt fields for the type of content (paragraph, question, quiz)
+        system_prompt, user_prompt, schema_name, schema = get_prompt_fields(request.content_type)
+      
         # Validate content_type
-        if request.content_type not in ["paragraph", "multiple_choice_question", "quiz"]:
+        if system_prompt == "invalid":
             logger.error(f"Invalid content_type: {request.content_type}")
             raise HTTPException(
                 status_code=400, 
-                detail=f"Invalid content_type. Must be one of: paragraph, multiple_choice_question, quiz"
+                detail=f"Invalid content_type. Must be one of:" + str(get_permitted_types())
             )
         
         # Format the context text if provided
         context_text = get_context_text(request.context)
-        
-        # Select appropriate prompts and schema based on content_type
-        if request.content_type == "paragraph":
-            system_prompt = PARAGRAPH_SYSTEM_PROMPT
-            user_prompt = PARAGRAPH_USER_PROMPT.format(
-                topic=request.topic,
-                context_text=context_text
-            )
-            schema = PARAGRAPH_SCHEMA
-            
-        elif request.content_type == "multiple_choice_question":
-            system_prompt = MCQ_SYSTEM_PROMPT
-            user_prompt = MCQ_USER_PROMPT.format(
-                topic=request.topic,
-                context_text=context_text
-            )
-            schema = MCQ_SCHEMA
-            
-        elif request.content_type == "quiz":
-            system_prompt = QUIZ_SYSTEM_PROMPT
-            user_prompt = QUIZ_USER_PROMPT.format(
-                topic=request.topic,
-                context_text=context_text
-            )
-            schema = QUIZ_SCHEMA
-        schema_name = request.content_type
+
+        # prepare the user prompt to include all relevant information
+        user_prompt = user_prompt.format(topic=request.topic, context_text = context_text)
  
         # Generate content with structured output schema
         content = await generate_content(system_prompt, user_prompt, schema, schema_name)
@@ -94,33 +65,10 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
         # Parse the JSON response
         response_json = parse_json_response(content)
         
-        # For paragraphs, convert the structured output back to our API format
-        if request.content_type == "paragraph":
-            return ParagraphResponse(content=response_json["content"])
-            
-        # For MCQs, return the structured output (it already matches our API format)
-        elif request.content_type == "multiple_choice_question":
-            return MultipleChoiceQuestion(
-                question_text=response_json["question_text"],
-                options=response_json["options"],
-                correct_answer_index=response_json["correct_answer_index"]
-            )
-            
-        # For quizzes, return the structured output (it already matches our API format)
-        elif request.content_type == "quiz":
-            questions = []
-            for q in response_json["questions"]:
-                questions.append(MultipleChoiceQuestion(
-                    question_text=q["question_text"],
-                    options=q["options"],
-                    correct_answer_index=q["correct_answer_index"]
-                ))
-                
-            return QuizResponse(
-                title=response_json["title"],
-                questions=questions
-            )
+        # If no error was raised until this point, we can safely return the JSON response
+        return response_json
     
+    # Error Handling
     except ValueError as e:
         logger.error(f"Value error: {str(e)}")
         raise HTTPException(status_code=422, detail=str(e))
