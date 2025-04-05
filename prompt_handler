@@ -1,7 +1,7 @@
 from typing import Any, Dict
 from schemas import *
 from prompt_templates import *
-["paragraph", "multiple_choice_question", "quiz"]
+
 def get_prompt_fields(content_type: str) -> tuple[str, str, str, Dict[str, Any]]:
     if content_type == "paragraph":
         return (PARAGRAPH_SYSTEM_PROMPT, PARAGRAPH_USER_PROMPT, 

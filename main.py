@@ -5,7 +5,6 @@ from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
 from dotenv import load_dotenv
 
-from prompt_handler import get_prompt_fields
 from schemas import ContentRequest, ParagraphResponse, MultipleChoiceQuestion, QuizResponse
 from prompt_templates import (
     PARAGRAPH_SYSTEM_PROMPT, MCQ_SYSTEM_PROMPT, QUIZ_SYSTEM_PROMPT,
@@ -14,6 +13,8 @@ from prompt_templates import (
 )
 from utils import generate_content, parse_json_response
 from json_schemas import PARAGRAPH_SCHEMA, MCQ_SCHEMA, QUIZ_SCHEMA
+
+from prompt_handler import get_prompt_fields
 
 # Load environment variables from .env file
 load_dotenv()
