@@ -24,14 +24,14 @@ A Python backend service for generating educational content using OpenAI's GPT-4
 
 ```
 project/
-├── main.py            # FastAPI application with endpoints
-├── schemas.py         # Pydantic models for request/response validation
-├── json_schemas.py    # JSON Schema definitions for OpenAI Structured Outputs
+├── main.py             # FastAPI application with endpoints
+├── schemas.py          # Pydantic models for request/response validation
+├── prompt_handler.py   # Helper functions to map content type to suitable prompts
 ├── prompt_templates.py # System and user prompts for different content types
-├── utils.py           # Utility functions for OpenAI API interaction
-├── requirements.txt   # Project dependencies
-├── .env               # Environment variables (not committed to version control)
-└── README.md          # Project documentation
+├── utils.py            # Utility functions for OpenAI API interaction
+├── requirements.txt    # Project dependencies
+├── .env                # Environment variables (not committed to version control)
+└── README.md           # Project documentation
 ```
 
 ## Setup Instructions
@@ -233,7 +233,7 @@ Each content type uses specialized prompts:
 - Include plausible distractors (incorrect options)
 
 #### Quiz Generation
-- Create 5 questions that cover different aspects of the topic
+- Create multiple questions that cover different aspects of the topic
 - Maintain consistency in difficulty
 - Provide a relevant title for the quiz
 
@@ -286,8 +286,8 @@ To deploy as a Cloud Run service:
 - Content is generated in English by default
 - The expected length of paragraphs is 100-200 words
 - Multiple-choice questions have exactly 4 options
-- Quizzes contain 5 questions
-- JSON parsing may occasionally fail if the model doesn't adhere to the requested format
+- Quizzes contain 5 questions by default (unless user requests otherwise)
+- JSON parsing could theoretically fail if the model doesn't adhere to the requested format
 - The service does not verify the factual accuracy of generated content
 
 ## Future Improvements
