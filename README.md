@@ -14,6 +14,7 @@ A Python backend service for generating educational content using OpenAI's GPT-4
 
 - **FastAPI**: Lightweight web framework for creating the API
 - **OpenAI API**: Using GPT-4o to generate high-quality educational content
+- **Structured Outputs**: Leveraging OpenAI's JSON Schema validation to ensure properly formatted responses
 - **Pydantic**: For request/response validation
 - **Environment Variables**: For secure API key management
 - **Comprehensive Logging**: For debugging and monitoring
@@ -25,6 +26,7 @@ A Python backend service for generating educational content using OpenAI's GPT-4
 project/
 ├── main.py            # FastAPI application with endpoints
 ├── schemas.py         # Pydantic models for request/response validation
+├── json_schemas.py    # JSON Schema definitions for OpenAI Structured Outputs
 ├── prompt_templates.py # System and user prompts for different content types
 ├── utils.py           # Utility functions for OpenAI API interaction
 ├── requirements.txt   # Project dependencies
@@ -204,27 +206,36 @@ print(json.dumps(response.json(), indent=2))
 
 ## Prompt Engineering Approach
 
-### Paragraph Generation
-For paragraph generation, the prompt instructs the model to:
+### OpenAI Structured Outputs
+This implementation uses OpenAI's Structured Outputs feature to ensure responses adhere to our defined JSON schemas. Benefits include:
+- Reliable type-safety with no need to validate or retry incorrectly formatted responses
+- Explicit refusals that are programmatically detectable
+- Simpler prompting without needing to strongly word instructions for consistent formatting
+
+### Schema Design
+We've designed JSON schemas for each content type:
+- **Paragraph Schema**: Ensures a valid paragraph with proper formatting
+- **MCQ Schema**: Enforces the question structure with exactly 4 options and a valid answer index
+- **Quiz Schema**: Validates the quiz structure with properly formatted questions
+
+### Prompt Design
+Each content type uses specialized prompts:
+
+#### Paragraph Generation
 - Create accurate, factual content
 - Make it clear and well-structured
 - Adjust to the educational level specified in the context
 - Keep length reasonable (100-200 words)
-- Return only the paragraph text with no additional commentary
 
-### Multiple-Choice Question Generation
-The MCQ prompt emphasizes:
-- Creating unambiguous questions that test understanding
-- Having exactly 4 options with only one correct answer
-- Including plausible distractors (incorrect options)
-- Structuring the response as valid JSON with the required fields
+#### Multiple-Choice Question Generation
+- Create unambiguous questions that test understanding
+- Have exactly 4 options with only one correct answer
+- Include plausible distractors (incorrect options)
 
-### Quiz Generation
-The quiz prompt builds on the MCQ approach but adds:
-- Creating 5 questions that cover different aspects of the topic
-- Maintaining consistency in difficulty
-- Ensuring each question follows the same JSON structure
-- Providing a relevant title for the quiz
+#### Quiz Generation
+- Create 5 questions that cover different aspects of the topic
+- Maintain consistency in difficulty
+- Provide a relevant title for the quiz
 
 ## Deployment to Google Cloud
 

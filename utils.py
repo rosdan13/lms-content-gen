@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-async def generate_content(system_prompt: str, user_prompt: str) -> str:
+async def generate_content(system_prompt: str, user_prompt: str, schema: Dict[str, Any] = None) -> str:
     """
-    Generate content using OpenAI's API with the given prompts
+    Generate content using OpenAI's API with the given prompts and JSON schema
     
     Args:
         system_prompt: The system prompt defining the AI's role and instructions
         user_prompt: The user prompt containing the specific request
+        schema: JSON schema to constrain the model's output (for Structured Outputs)
         
     Returns:
         The generated content as a string
@@ -28,18 +29,40 @@ async def generate_content(system_prompt: str, user_prompt: str) -> str:
     try:
         logger.info(f"Generating content with OpenAI: {user_prompt[:50]}...")
         
-        response = client.chat.completions.create(
-            model="gpt-4o",  # Using the specified model
-            messages=[
+        # Prepare API call parameters
+        params = {
+            "model": "gpt-4o",  # Using the specified model
+            "input": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.7,  # Moderate creativity
-            max_tokens=1000,  # Adjust as needed
-        )
+            "temperature": 0.7,  # Moderate creativity
+            "max_tokens": 1000,  # Adjust as needed
+        }
         
-        content = response.choices[0].message.content
+        # Add structured output if schema is provided
+        if schema:
+            params["text"] = {
+                "format": {
+                    "type": "json_schema",
+                    "schema": schema,
+                    "strict": True
+                }
+            }
+        
+        # Make the API call
+        response = client.responses.create(**params)
+        
+        # Check for refusals or incomplete responses
+        if response.status == "incomplete":
+            reason = response.incomplete_details.reason
+            logger.error(f"Incomplete response: {reason}")
+            raise Exception(f"Failed to generate complete content: {reason}")
+            
+        # Get the content
+        content = response.output_text
         logger.info(f"Content generated successfully: {len(content)} chars")
+        
         return content
         
     except Exception as e:
@@ -61,19 +84,8 @@ def parse_json_response(response_text: str) -> Dict[str, Any]:
         ValueError: If the response text can't be parsed as JSON
     """
     try:
-        # Try to find JSON if it's embedded in a larger text
-        response_text = response_text.strip()
-        
-        # If response is wrapped in backticks or has extra text, try to extract just the JSON
-        if "```json" in response_text and "```" in response_text.split("```json", 1)[1]:
-            json_content = response_text.split("```json", 1)[1].split("```", 1)[0].strip()
-            return json.loads(json_content)
-        elif "```" in response_text and "```" in response_text.split("```", 1)[1]:
-            json_content = response_text.split("```", 1)[1].split("```", 1)[0].strip()
-            return json.loads(json_content)
-        else:
-            # Try parsing the whole response as JSON
-            return json.loads(response_text)
+        # With Structured Outputs, response should already be valid JSON
+        return json.loads(response_text)
             
     except Exception as e:
         logger.error(f"Error parsing JSON response: {str(e)}")

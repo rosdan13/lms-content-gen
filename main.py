@@ -12,6 +12,7 @@ from prompt_templates import (
     get_context_text
 )
 from utils import generate_content, parse_json_response
+from json_schemas import PARAGRAPH_SCHEMA, MCQ_SCHEMA, QUIZ_SCHEMA
 
 # Load environment variables from .env file
 load_dotenv()
@@ -58,19 +59,14 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
         # Format the context text if provided
         context_text = get_context_text(request.context)
         
-        # Select appropriate prompts based on content_type
+        # Select appropriate prompts and schema based on content_type
         if request.content_type == "paragraph":
             system_prompt = PARAGRAPH_SYSTEM_PROMPT
             user_prompt = PARAGRAPH_USER_PROMPT.format(
                 topic=request.topic,
                 context_text=context_text
             )
-            
-            # Generate content
-            content = await generate_content(system_prompt, user_prompt)
-            
-            # For paragraphs, we don't need to parse JSON
-            return ParagraphResponse(content=content)
+            schema = PARAGRAPH_SCHEMA
             
         elif request.content_type == "multiple_choice_question":
             system_prompt = MCQ_SYSTEM_PROMPT
@@ -78,28 +74,7 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
                 topic=request.topic,
                 context_text=context_text
             )
-            
-            # Generate content
-            content = await generate_content(system_prompt, user_prompt)
-            
-            # Parse the JSON response
-            response_json = parse_json_response(content)
-            
-            # Validate the response structure
-            required_fields = ["question_text", "options", "correct_answer_index"]
-            for field in required_fields:
-                if field not in response_json:
-                    raise ValueError(f"Missing required field in response: {field}")
-                    
-            if len(response_json["options"]) != 4:
-                raise ValueError(f"Expected 4 options, got {len(response_json['options'])}")
-                
-            # Create and return the response object
-            return MultipleChoiceQuestion(
-                question_text=response_json["question_text"],
-                options=response_json["options"],
-                correct_answer_index=response_json["correct_answer_index"]
-            )
+            schema = MCQ_SCHEMA
             
         elif request.content_type == "quiz":
             system_prompt = QUIZ_SYSTEM_PROMPT
@@ -107,26 +82,30 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
                 topic=request.topic,
                 context_text=context_text
             )
+            schema = QUIZ_SCHEMA
             
-            # Generate content
-            content = await generate_content(system_prompt, user_prompt)
+        # Generate content with structured output schema
+        content = await generate_content(system_prompt, user_prompt, schema)
+        
+        # Parse the JSON response
+        response_json = parse_json_response(content)
+        
+        # For paragraphs, convert the structured output back to our API format
+        if request.content_type == "paragraph":
+            return ParagraphResponse(content=response_json["content"])
             
-            # Parse the JSON response
-            response_json = parse_json_response(content)
+        # For MCQs, return the structured output (it already matches our API format)
+        elif request.content_type == "multiple_choice_question":
+            return MultipleChoiceQuestion(
+                question_text=response_json["question_text"],
+                options=response_json["options"],
+                correct_answer_index=response_json["correct_answer_index"]
+            )
             
-            # Validate the response structure
-            if "title" not in response_json or "questions" not in response_json:
-                raise ValueError("Missing required fields in quiz response")
-                
-            # Create and return the response object
+        # For quizzes, return the structured output (it already matches our API format)
+        elif request.content_type == "quiz":
             questions = []
             for q in response_json["questions"]:
-                # Validate each question
-                required_fields = ["question_text", "options", "correct_answer_index"]
-                for field in required_fields:
-                    if field not in q:
-                        raise ValueError(f"Missing required field in question: {field}")
-                
                 questions.append(MultipleChoiceQuestion(
                     question_text=q["question_text"],
                     options=q["options"],

@@ -9,7 +9,8 @@ The content should be:
 - Appropriate for the educational level implied by the context (if provided)
 - Between 100-200 words in length
 
-Respond with ONLY the paragraph text. Do not include any additional commentary, headings, or metadata."""
+Your response must be formatted as a valid JSON object with 'type' and 'content' fields.
+Always use proper JSON structure."""
 
 # System prompt for multiple-choice question generation
 MCQ_SYSTEM_PROMPT = """You are an educational content generator for a Learning Management System.
@@ -23,8 +24,9 @@ The question should:
 - Have exactly one correct answer
 - Have plausible distractors (incorrect options)
 
-You must format your response as a valid JSON object with the following structure:
+Your response must be a valid JSON object with the following structure:
 {
+  "type": "multiple_choice_question",
   "question_text": "The question text goes here?",
   "options": [
     "Option A",
@@ -35,8 +37,7 @@ You must format your response as a valid JSON object with the following structur
   "correct_answer_index": 0  // Index of the correct answer (0-based)
 }
 
-Ensure the correct_answer_index is the 0-based index of the correct option in the options array.
-Your response must be valid JSON with this exact structure and nothing else."""
+Ensure the correct_answer_index is the 0-based index of the correct option in the options array."""
 
 # System prompt for quiz generation
 QUIZ_SYSTEM_PROMPT = """You are an educational content generator for a Learning Management System.
@@ -52,11 +53,13 @@ Each question should:
 
 The questions should cover different aspects or subtopics of the main topic.
 
-You must format your response as a valid JSON object with the following structure:
+Your response must be a valid JSON object with the following structure:
 {
+  "type": "quiz",
   "title": "Quiz title related to the topic",
   "questions": [
     {
+      "type": "multiple_choice_question",
       "question_text": "First question text?",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correct_answer_index": 0
@@ -65,8 +68,7 @@ You must format your response as a valid JSON object with the following structur
   ]
 }
 
-Ensure each correct_answer_index is the 0-based index of the correct option in the options array.
-Your response must be valid JSON that matches this exact structure and nothing else."""
+Ensure each correct_answer_index is the 0-based index of the correct option in the options array."""
 
 
 # User prompt templates (to be formatted with actual values)
