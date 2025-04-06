@@ -87,10 +87,8 @@ async def health_check():
     return {"status": "healthy"}
 
 
-# For local development
+# For local development and Cloud Run
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-# Entry point for Google Cloud Function deployment
-def entry_point(request):
-    return app(request)
+    import os
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

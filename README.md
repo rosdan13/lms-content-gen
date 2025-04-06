@@ -1,37 +1,53 @@
 # LMS AI Content Generator
 
-A Python backend service for generating educational content using OpenAI's GPT-4o model. This service is designed to be deployed as a serverless function (Google Cloud Function or Cloud Run service) and provides an API endpoint for generating paragraphs, multiple-choice questions, and quizzes based on specified topics.
+A comprehensive solution for generating educational content using OpenAI's GPT-4o model. This project includes both a Python backend service for API access and a user-friendly GUI application for desktop use.
+
+## Overview
+
+This project offers two main components:
+
+1. **Backend API Service**: A serverless function/service (Google Cloud Run) that provides endpoints for generating educational content
+2. **Desktop GUI Application**: A modern user interface for easily generating and viewing content without coding knowledge
 
 ## Features
 
+### Backend API
 - Generate educational paragraphs on any topic
 - Create well-formed multiple-choice questions with 4 options
 - Generate comprehensive quizzes with multiple questions
 - Support for additional context to guide content generation
-- Structured JSON responses for easy integration with frontend components
+- Structured JSON responses for easy integration
 
-## Technical Architecture
+### GUI Application
+- Modern, intuitive interface with a clean design
+- Supports all content types provided by the API
+- History tracking for previous content generation requests
+- Raw JSON response viewer with syntax highlighting
+- Copy-to-clipboard functionality
+- Threading support for responsive UI during API calls
+
+## Backend Technical Architecture
 
 - **FastAPI**: Lightweight web framework for creating the API
 - **OpenAI API**: Using GPT-4o to generate high-quality educational content
-- **Structured Outputs**: Leveraging OpenAI's JSON Schema validation to ensure properly formatted responses
+- **Structured Outputs**: Leveraging OpenAI's JSON Schema validation
 - **Pydantic**: For request/response validation
 - **Environment Variables**: For secure API key management
-- **Comprehensive Logging**: For debugging and monitoring
-- **Error Handling**: Graceful handling of edge cases
+- **Cloud Run**: For scalable, serverless deployment
 
 ## Project Structure
 
 ```
 project/
-├── main.py             # FastAPI application with endpoints
-├── schemas.py          # Pydantic models for request/response validation
-├── prompt_handler.py   # Helper functions to map content type to suitable prompts
-├── prompt_templates.py # System and user prompts for different content types
-├── utils.py            # Utility functions for OpenAI API interaction
-├── requirements.txt    # Project dependencies
-├── .env                # Environment variables (not committed to version control)
-└── README.md           # Project documentation
+├── main.py                 # FastAPI application with endpoints
+├── prompt_handler.py       # Helper functions for prompt management
+├── prompt_templates.py     # System and user prompts for different content types
+├── schemas.py              # Pydantic models for request/response validation
+├── utils.py                # Utility functions for OpenAI API interaction
+├── lms_content_gui.py      # GUI application for desktop use
+├── requirements.txt        # Project dependencies
+├── Dockerfile              # For Cloud Run deployment
+└── README.md               # Project documentation
 ```
 
 ## Setup Instructions
@@ -40,6 +56,7 @@ project/
 
 - Python 3.8 or higher
 - An OpenAI API key
+- For GUI: tkinter (usually included with Python)
 
 ### Installation
 
@@ -65,14 +82,51 @@ project/
    OPENAI_API_KEY=your_api_key_here
    ```
 
-### Running Locally
+## Usage Options
 
-Start the server:
+### Option 1: Run Locally (API)
+
+Start the server locally:
 ```bash
 python main.py
 ```
 
 The API will be available at `http://localhost:8000`.
+
+### Option 2: Run the GUI Application
+
+Launch the desktop application:
+```bash
+python lms_content_gui.py
+```
+
+### Option 3: Deploy to Google Cloud Run
+
+1. Build and deploy the Docker container:
+   ```bash
+   gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/lms-content-generator
+   gcloud run deploy lms-content-generator \
+     --image gcr.io/YOUR_PROJECT_ID/lms-content-generator \
+     --platform managed \
+     --region us-central1 \
+     --allow-unauthenticated \
+     --set-env-vars OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+2. Get your service URL from the command output
+
+## GUI Application Usage
+
+1. **Launch the application** using `python lms_content_gui.py`
+2. **Enter your Cloud Run API URL** in the URL field (or use the local URL for testing)
+3. **Create content** by:
+   - Entering a topic
+   - Selecting a content type (paragraph, question, or quiz)
+   - Adding optional context
+   - Clicking "Generate Content"
+4. **Review the results** in the main display area
+5. **View raw JSON** by clicking the "View Raw Response" button
+6. **Access history** to recall and reuse previous requests
 
 ## API Usage
 
@@ -94,56 +148,15 @@ Where:
 - `content_type`: One of: `paragraph`, `multiple_choice_question`, or `quiz`
 - `context` (optional): Additional instructions or context
 
-**Example Requests**:
-
-1. Generate a paragraph:
+**Example Request**:
 ```bash
-curl -X POST "http://localhost:8000/generate" \
+curl -X POST "YOUR_SERVICE_URL/generate" \
   -H "Content-Type: application/json" \
   -d '{
     "topic": "Introduction to Python Variables",
     "content_type": "paragraph",
     "context": "Explain for beginners"
   }'
-```
-
-2. Generate a multiple-choice question:
-```bash
-curl -X POST "http://localhost:8000/generate" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "topic": "Photosynthesis",
-    "content_type": "multiple_choice_question",
-    "context": "High school level"
-  }'
-```
-
-3. Generate a quiz:
-```bash
-curl -X POST "http://localhost:8000/generate" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "topic": "World War II",
-    "content_type": "quiz",
-    "context": "Focus on key events and figures"
-  }'
-```
-
-**Using Python Requests**:
-```python
-import requests
-import json
-
-url = "http://localhost:8000/generate"
-payload = {
-    "topic": "Introduction to Python Variables",
-    "content_type": "paragraph",
-    "context": "Explain for beginners"
-}
-headers = {"Content-Type": "application/json"}
-
-response = requests.post(url, json=payload, headers=headers)
-print(json.dumps(response.json(), indent=2))
 ```
 
 ## Response Examples
@@ -204,81 +217,16 @@ print(json.dumps(response.json(), indent=2))
 }
 ```
 
-## Prompt Engineering Approach
+## Creating a Standalone Executable for the GUI
 
-### OpenAI Structured Outputs
-This implementation uses OpenAI's Structured Outputs feature to ensure responses adhere to our defined JSON schemas. Benefits include:
-- Reliable type-safety with no need to validate or retry incorrectly formatted responses
-- Explicit refusals that are programmatically detectable
-- Simpler prompting without needing to strongly word instructions for consistent formatting
+You can create a standalone executable using PyInstaller:
 
-### Schema Design
-We've designed JSON schemas for each content type:
-- **Paragraph Schema**: Ensures a valid paragraph with proper formatting
-- **MCQ Schema**: Enforces the question structure with exactly 4 options and a valid answer index
-- **Quiz Schema**: Validates the quiz structure with properly formatted questions
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed lms_content_gui.py
+```
 
-### Prompt Design
-Each content type uses specialized prompts:
-
-#### Paragraph Generation
-- Create accurate, factual content
-- Make it clear and well-structured
-- Adjust to the educational level specified in the context
-- Keep length reasonable (100-200 words)
-
-#### Multiple-Choice Question Generation
-- Create unambiguous questions that test understanding
-- Have exactly 4 options with only one correct answer
-- Include plausible distractors (incorrect options)
-
-#### Quiz Generation
-- Create multiple questions that cover different aspects of the topic
-- Maintain consistency in difficulty
-- Provide a relevant title for the quiz
-
-## Deployment to Google Cloud
-
-### Cloud Function Deployment
-
-The code is already structured for Google Cloud Function deployment. The `entry_point` function in `main.py` serves as the entry point.
-
-1. Deploy using gcloud CLI:
-   ```bash
-   gcloud functions deploy lms-content-generator \
-     --runtime python39 \
-     --trigger-http \
-     --allow-unauthenticated \
-     --entry-point entry_point \
-     --set-env-vars OPENAI_API_KEY=your_api_key_here
-   ```
-
-### Cloud Run Deployment
-
-To deploy as a Cloud Run service:
-
-1. Create a Dockerfile:
-   ```dockerfile
-   FROM python:3.9-slim
-   
-   WORKDIR /app
-   
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-   
-   COPY . .
-   
-   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-   ```
-
-2. Build and deploy:
-   ```bash
-   gcloud builds submit --tag gcr.io/your-project/lms-content-generator
-   gcloud run deploy lms-content-generator \
-     --image gcr.io/your-project/lms-content-generator \
-     --platform managed \
-     --set-env-vars OPENAI_API_KEY=your_api_key_here
-   ```
+The executable will be created in the `dist` folder.
 
 ## Limitations and Assumptions
 
@@ -286,9 +234,8 @@ To deploy as a Cloud Run service:
 - Content is generated in English by default
 - The expected length of paragraphs is 100-200 words
 - Multiple-choice questions have exactly 4 options
-- Quizzes contain 5 questions by default (unless user requests otherwise)
-- JSON parsing could theoretically fail if the model doesn't adhere to the requested format
-- The service does not verify the factual accuracy of generated content
+- Quizzes contain 5 questions by default (unless specified otherwise)
+- GUI requires tkinter, which is usually included with Python installations
 
 ## Future Improvements
 
@@ -298,3 +245,4 @@ To deploy as a Cloud Run service:
 - Caching frequently requested topics
 - Additional customization options (difficulty level, target age group, etc.)
 - Content filtering for educational appropriateness
+- OAuth authentication for the API
