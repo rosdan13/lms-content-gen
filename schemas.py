@@ -3,13 +3,15 @@ from pydantic import BaseModel, Field
 
 # Request Models
 class ContentRequest(BaseModel):
-    topic: str = Field(..., description="The subject matter for content generation")
+    topic: str = Field(..., min_length=1, description="The subject matter for content generation")
     content_type: str = Field(..., description="Type of content to generate (paragraph, multiple_choice_question, or quiz)")
     context: Optional[str] = Field(None, description="Additional context or specific instructions")
    
-    class Config:
-        extra = "forbid" # This makes additionalProperties = False in JSON Schema
-
+    model_config = {
+    "extra": "forbid",
+    "str_strip_whitespace": True,  # Automatically strip whitespace from all strings
+    }
+    
 # Response Models
 class ParagraphResponse(BaseModel):
     type: Literal["paragraph"]
