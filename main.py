@@ -1,6 +1,7 @@
 import os
 import logging
 from fastapi import FastAPI, HTTPException, Depends
+from pydantic import ValidationError
 import uvicorn
 from dotenv import load_dotenv
 
@@ -70,8 +71,12 @@ async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
     # Error Handling
     except ValueError as e:
         logger.error(f"Value error: {str(e)}")
-        raise HTTPException(status_code=422, detail=str(e))
-        
+        raise HTTPException(status_code=423, detail=str(e))
+    
+    except ValidationError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(status_code=423, detail=str(e))
+
     except HTTPException:
         # Re-raise HTTP exceptions
         raise

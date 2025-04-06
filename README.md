@@ -148,7 +148,11 @@ Where:
 - `content_type`: One of: `paragraph`, `multiple_choice_question`, or `quiz`
 - `context` (optional): Additional instructions or context
 
-**Example Request**:
+## Command Line Usage
+
+### Linux/macOS Terminal (curl)
+
+1. **Generate a paragraph**:
 ```bash
 curl -X POST "YOUR_SERVICE_URL/generate" \
   -H "Content-Type: application/json" \
@@ -157,6 +161,89 @@ curl -X POST "YOUR_SERVICE_URL/generate" \
     "content_type": "paragraph",
     "context": "Explain for beginners"
   }'
+```
+
+2. **Generate a multiple-choice question**:
+```bash
+curl -X POST "YOUR_SERVICE_URL/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "Photosynthesis",
+    "content_type": "multiple_choice_question",
+    "context": "High school level"
+  }'
+```
+
+3. **Generate a quiz**:
+```bash
+curl -X POST "YOUR_SERVICE_URL/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "World War II",
+    "content_type": "quiz",
+    "context": "Focus on key events"
+  }'
+```
+
+4. **Check API health**:
+```bash
+curl -X GET "YOUR_SERVICE_URL/health"
+```
+
+### Windows PowerShell
+
+1. **Generate a paragraph**:
+```powershell
+$body = @{
+    topic = "Introduction to Python Variables"
+    content_type = "paragraph"
+    context = "Explain for beginners"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "YOUR_SERVICE_URL/generate" -Method Post -Body $body -ContentType "application/json"
+```
+
+2. **Generate a multiple-choice question**:
+```powershell
+$body = @{
+    topic = "Photosynthesis"
+    content_type = "multiple_choice_question"
+    context = "High school level"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "YOUR_SERVICE_URL/generate" -Method Post -Body $body -ContentType "application/json"
+```
+
+3. **Generate a quiz**:
+```powershell
+$body = @{
+    topic = "World War II"
+    content_type = "quiz"
+    context = "Focus on key events"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "YOUR_SERVICE_URL/generate" -Method Post -Body $body -ContentType "application/json"
+```
+
+4. **Check API health**:
+```powershell
+Invoke-RestMethod -Uri "YOUR_SERVICE_URL/health" -Method Get
+```
+
+### Saving Response to File
+
+**Linux/macOS**:
+```bash
+curl -X POST "YOUR_SERVICE_URL/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"topic":"Climate Change","content_type":"paragraph"}' \
+  -o response.json
+```
+
+**Windows PowerShell**:
+```powershell
+$response = Invoke-RestMethod -Uri "YOUR_SERVICE_URL/generate" -Method Post -Body '{"topic":"Climate Change","content_type":"paragraph"}' -ContentType "application/json"
+$response | ConvertTo-Json -Depth 10 | Out-File response.json
 ```
 
 ## Response Examples
