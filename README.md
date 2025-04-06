@@ -62,8 +62,8 @@ project/
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/lms-ai-content-generator.git
-   cd lms-ai-content-generator
+   git clone https://github.com/rosdan13/lms-content-gen.git
+   cd lms-content-generator
    ```
 
 2. Create a virtual environment and activate it:

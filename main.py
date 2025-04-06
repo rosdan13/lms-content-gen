@@ -33,7 +33,7 @@ def check_api_key():
     "/generate",
     summary="Generate educational content"
 )
-async def generate(request: Request, _: None = Depends(check_api_key)):
+async def generate(request: ContentRequest, _: None = Depends(check_api_key)):
     """
     Generate educational content based on the specified topic and content type.
     
@@ -41,34 +41,34 @@ async def generate(request: Request, _: None = Depends(check_api_key)):
     - **content_type**: Type of content to generate (paragraph, multiple_choice_question, or quiz)
     - **context**: Optional additional instructions or context
     """
-    try:
-        # Get the raw request body
-        body = await request.body()
-        body_str = body.decode('utf-8')
-    except Exception as e:
-            logger.error(f"Couldn't retrieve request body: {str(e)}")
-            raise HTTPException(status_code=400, detail=f"Couldn't retrieve request body: {str(e)}")
+    # try:
+    #     # Get the raw request body
+    #     body = await request.body()
+    #     body_str = body.decode('utf-8')
+    # except Exception as e:
+    #         logger.error(f"Couldn't retrieve request body: {str(e)}")
+    #         raise HTTPException(status_code=400, detail=f"Couldn't retrieve request body: {str(e)}")
 
     try:
         # Manually validate using the Pydantic model
-        content_request = ContentRequest.model_validate_json(body_str,strict=True)
+        # content_request = ContentRequest.model_validate_json(body_str,strict=True)
         # Get the right prompt fields for the type of content (paragraph, question, quiz)
-        system_prompt, user_prompt, schema_name, schema = get_prompt_fields(content_request.content_type)
+        system_prompt, user_prompt, schema_name, schema = get_prompt_fields(request.content_type)
         # Validate content_type and topic
         if system_prompt == "invalid":
-            logger.error(f"Invalid content_type: {content_request.content_type}")
+            logger.error(f"Invalid content_type: {request.content_type}")
             raise HTTPException(
                 status_code=400, 
                 detail=f"Invalid content_type. Must be one of:" + str(get_permitted_types())
             )
-        if content_request.topic == "":
+        if request.topic == "":
             logger.error(f"'topic' field was left empty")
             raise ValueError("'topic' field should not be empty")
         # Format the context text if provided
-        context_text = get_context_text(content_request.context)
+        context_text = get_context_text(request.context)
 
         # prepare the user prompt to include all relevant information
-        user_prompt = user_prompt.format(topic=content_request.topic, context_text = context_text)
+        user_prompt = user_prompt.format(topic=request.topic, context_text = context_text)
  
         # Generate content with structured output schema
         content = await generate_content(system_prompt, user_prompt, schema, schema_name)
@@ -107,4 +107,5 @@ async def health_check():
 if __name__ == "__main__":
     import os
     port = int(os.getenv("PORT", "8000"))
+    print(port)
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
