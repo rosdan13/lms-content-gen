@@ -6,6 +6,9 @@ class ContentRequest(BaseModel):
     topic: str = Field(..., description="The subject matter for content generation")
     content_type: str = Field(..., description="Type of content to generate (paragraph, multiple_choice_question, or quiz)")
     context: Optional[str] = Field(None, description="Additional context or specific instructions")
+   
+    class Config:
+        extra = "forbid" # This makes additionalProperties = False in JSON Schema
 
 # Response Models
 class ParagraphResponse(BaseModel):
