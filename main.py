@@ -1,6 +1,5 @@
 import os
 import logging
-from typing import Union
 from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
 from dotenv import load_dotenv
