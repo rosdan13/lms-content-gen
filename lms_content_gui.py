@@ -376,9 +376,9 @@ class LMSContentGeneratorGUI:
                     saved_url = f.read().strip()
                     self.url_var.set(saved_url)
             else:
-                self.url_var.set("https://lms-content-generator-188283756417.us-central1.run.app")
+                self.url_var.set("https://lms-content-generator-xxxxxxxxxxxx.us-central1.run.app")
         except:
-            self.url_var.set("https://lms-content-generator-188283756417.us-central1.run.app")
+            self.url_var.set("https://lms-content-generator-xxxxxxxxxxxx.us-central1.run.app")
         
         url_entry = ttk.Entry(url_frame, textvariable=self.url_var, width=50)
         url_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
