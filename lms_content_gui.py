@@ -8,6 +8,39 @@ from ttkthemes import ThemedTk
 import threading
 from functools import partial
 
+class ToolTip:
+    """Create a tooltip for a given widget"""
+    def __init__(self, widget, text=""):
+        self.widget = widget
+        self.text = text
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+        self.tooltip_window = None
+
+    def enter(self, event=None):
+        """Display the tooltip when mouse enters the widget"""
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+        
+        # Create new window
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)  # Remove window decorations
+        tw.wm_geometry(f"+{x}+{y}")
+        
+        # Create tooltip label
+        label = ttk.Label(tw, text=self.text, justify=tk.LEFT,
+                      background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                      font=("Segoe UI", 9, "normal"), padding=(5, 2))
+        label.pack(ipadx=2)
+
+    def leave(self, event=None):
+        """Remove tooltip when mouse leaves the widget"""
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
+
+
 class LoadingSpinner:
     """Creates a loading spinner animation"""
     def __init__(self, parent, size=30, color='#2196F3'):
@@ -396,6 +429,36 @@ class LMSContentGeneratorGUI:
             background=self.colors['surface'], foreground=self.colors['text'])
         self.context_text.pack(fill=tk.BOTH, expand=True)
         
+        # Add options frame for caching and conversation state
+        options_frame = ttk.Frame(form_grid, style='TFrame')
+        options_frame.grid(row=3, column=1, sticky=tk.W, pady=5)
+        
+        # Use cache checkbox - Changed default to False
+        self.use_cache_var = tk.BooleanVar(value=False)  # Default is unchecked
+        cache_check = ttk.Checkbutton(options_frame, text="Use Cache", 
+                                  variable=self.use_cache_var,
+                                  command=self.toggle_cache)  # Add command callback
+        cache_check.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Add tooltip for cache checkbox
+        cache_tooltip = ToolTip(cache_check, 
+                            "Cache responses for identical requests (topic+type+context).\n" +
+                            "Limited to the last 100 requests.\n" +
+                            "Cannot be used with Conversation State.")
+        
+        # Conversation state checkbox - Default remains True
+        self.use_state_var = tk.BooleanVar(value=True)  # Default is checked
+        state_check = ttk.Checkbutton(options_frame, text="Conversation State", 
+                                  variable=self.use_state_var,
+                                  command=self.toggle_state)  # Add command callback
+        state_check.pack(side=tk.LEFT)
+        
+        # Add tooltip for state checkbox
+        state_tooltip = ToolTip(state_check, 
+                            "Include previous request and response in context\n" + 
+                            "to create a conversation-like interaction.\n" +
+                            "Cannot be used with Cache.")
+        
         # Generate Button with loading indicator container
         button_frame = ttk.Frame(input_frame, style='TFrame')
         button_frame.pack(fill=tk.X, pady=(15, 5))
@@ -506,6 +569,19 @@ class LMSContentGeneratorGUI:
         # Set focus to the topic field
         topic_entry.focus_set()
     
+    # Add the toggle methods for mutually exclusive checkboxes
+    def toggle_cache(self):
+        """Toggle the cache checkbox and ensure state checkbox is opposite"""
+        if self.use_cache_var.get():
+            # If cache is being turned on, turn off state
+            self.use_state_var.set(False)
+    
+    def toggle_state(self):
+        """Toggle the state checkbox and ensure cache checkbox is opposite"""
+        if self.use_state_var.get():
+            # If state is being turned on, turn off cache
+            self.use_cache_var.set(False)
+    
     def generate_content(self):
         """Send a request to the API and display the results"""
         # Save the URL to config file
@@ -518,7 +594,32 @@ class LMSContentGeneratorGUI:
             
         topic = self.topic_var.get().strip()
         content_type = self.content_type_var.get()
+        
+        # Get the context and apply cache/state markers based on checkbox settings
         context = self.context_text.get("1.0", tk.END).strip()
+        
+        # Check character limits
+        if len(topic) > 10000:
+            messagebox.showerror("Error", "Topic exceeds 10,000 character limit")
+            return
+            
+        if len(context) > 10000:
+            messagebox.showerror("Error", "Context exceeds 10,000 character limit")
+            return
+        
+        # Apply cache marker if enabled
+        if self.use_cache_var.get():
+            if not context.startswith("[cache=true]"):
+                context = f"[cache=true] {context}"
+        else:
+            context = context.replace("[cache=true]", "").strip()
+            
+        # Apply state marker if enabled
+        if self.use_state_var.get():
+            if not context.endswith("[state=true]"):
+                context = f"{context} [state=true]"
+        else:
+            context = context.replace("[state=true]", "").strip()
         
         # Validate inputs
         if not topic:
@@ -597,17 +698,29 @@ class LMSContentGeneratorGUI:
                     formatted_json = json.dumps(data, indent=2)
                     self.results_text.insert(tk.END, formatted_json)
                 
-                # Add to history
+                # Add to history - Store the context without markers for better display
+                display_context = context
+                if self.use_cache_var.get():
+                    display_context = display_context.replace("[cache=true]", "").strip()
+                if self.use_state_var.get():
+                    display_context = display_context.replace("[state=true]", "").strip()
+                
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 history_item = {
                     "timestamp": timestamp,
                     "topic": topic,
                     "content_type": content_type,
-                    "context": context,
+                    "context": display_context,  # Store cleaned context for display
+                    "use_cache": self.use_cache_var.get(),
+                    "use_state": self.use_state_var.get(),
                     "response": data,
                     "raw_response": self.current_raw_response
                 }
                 self._add_history_item(history_item)
+                
+                # Update the context field with the cleaned context (preserving markers)
+                self.context_text.delete("1.0", tk.END)
+                self.context_text.insert(tk.END, display_context)
                 
                 self.status_var.set("Content generated successfully")
             except json.JSONDecodeError:
@@ -727,6 +840,12 @@ class LMSContentGeneratorGUI:
             self.content_type_var.set(item["content_type"])
             self.context_text.delete("1.0", tk.END)
             self.context_text.insert(tk.END, item["context"])
+            
+            # Set the cache and state checkboxes if they were stored
+            if "use_cache" in item:
+                self.use_cache_var.set(item["use_cache"])
+            if "use_state" in item:
+                self.use_state_var.set(item["use_state"])
             
             # Store the raw response
             self.current_raw_response = item.get("raw_response", item["response"])

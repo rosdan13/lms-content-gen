@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 import uvicorn
 from dotenv import load_dotenv
+from collections import OrderedDict
 
 # Import the custom cloud logger
 from cloud_logger import logger
@@ -23,6 +24,14 @@ app = FastAPI(
     description="API for generating educational content with AI",
     version="1.0.0",
 )
+
+# Initialize cache with OrderedDict (FIFO behavior)
+response_cache = OrderedDict()
+CACHE_SIZE_LIMIT = 100
+
+# Initialize conversation state tracker
+last_saved_request = None
+last_saved_response = None
 
 # Custom exception handler for request validation errors
 @app.exception_handler(RequestValidationError)
@@ -58,6 +67,67 @@ def check_api_key():
         logger.error("OPENAI_API_KEY not set in environment variables", 
                    extra={"environment": os.environ.get("K_SERVICE", "local")})
         raise HTTPException(status_code=500, detail="API key not configured")
+
+
+def should_use_cache(context: str) -> bool:
+    """Check if the request should use cache based on context field"""
+    return context and context.strip().startswith("[cache=true]")
+
+
+def should_use_state(context: str) -> bool:
+    """Check if the request should use conversation state based on context field"""
+    return context and context.strip().endswith("[state=true]")
+
+
+def cache_key(content_request: ContentRequest) -> str:
+    """Generate a unique key for caching based on request parameters"""
+    return f"{content_request.topic}|{content_request.content_type}|{content_request.context}"
+
+
+def add_to_cache(key: str, response: dict):
+    """Add a response to the cache with FIFO behavior"""
+    global response_cache
+    
+    # If cache is at capacity, remove oldest item (first added)
+    if len(response_cache) >= CACHE_SIZE_LIMIT:
+        response_cache.popitem(last=False)
+    
+    # Add new item to cache
+    response_cache[key] = response
+    logger.info(f"Added response to cache. Cache size: {len(response_cache)}")
+
+
+def apply_conversation_state(content_request: ContentRequest):
+    """Apply conversation state to the request if needed"""
+    global last_saved_request, last_saved_response
+    
+    # Only apply state if conditions are met
+    if (last_saved_request and last_saved_response and 
+        content_request.topic == last_saved_request.topic):
+        
+        # Create a summary of the previous interaction
+        prev_context = last_saved_request.context or ""
+        # Remove the state marker for better readability
+        prev_context = prev_context.replace("[state=true]", "").strip()
+        
+        # Format last request and response as context
+        state_context = f"""
+Previous request:
+Topic: {last_saved_request.topic}
+Content type: {last_saved_request.content_type}
+Context: {prev_context}
+
+Previous response:
+{last_saved_response}
+
+Current request:
+"""
+        # Modify the context to include previous state
+        # Remove the state marker first, then add it back later
+        current_context = content_request.context.replace("[state=true]", "").strip()
+        content_request.context = f"{state_context}{current_context}[state=true]"
+        
+        logger.info("Applied conversation state to request")
 
 
 def prepare_generation_params(content_request, request_id):
@@ -172,6 +242,8 @@ async def generate(content_request: ContentRequest, _: None = Depends(check_api_
     - **content_type**: Type of content to generate (paragraph, multiple_choice_question, or quiz)
     - **context**: Optional additional instructions or context
     """
+    global last_saved_request, last_saved_response
+    
     # Generate unique ID for request tracking
     request_id = os.urandom(8).hex()
     
@@ -184,6 +256,29 @@ async def generate(content_request: ContentRequest, _: None = Depends(check_api_
     })
     
     try:
+        # Caching and Conversation State are naturally mutually exclusive,
+        # because in a conversation 2 identical requests could have completely
+        # different meanings depending on previous context.
+        # Therefore, when conversation state is enabled caching will not take place.
+        state_enabled = should_use_state(content_request.context)
+        cache_enabled = should_use_cache(content_request.context)
+       
+        # Apply conversation state if needed
+        if state_enabled:
+            cache_enabled = False
+            apply_conversation_state(content_request)
+        
+        # Check if we should use the cache
+        if cache_enabled:
+            cache_key_value = cache_key(content_request)
+            if cache_key_value in response_cache:
+                logger.info("Cache hit - returning cached response", extra={
+                    "request_id": request_id,
+                    "cache_key": cache_key_value
+                })
+                
+                return response_cache[cache_key_value]
+        
         # Step 1: Prepare generation parameters
         params = prepare_generation_params(content_request, request_id)
         
@@ -191,7 +286,18 @@ async def generate(content_request: ContentRequest, _: None = Depends(check_api_
         content = await generate_ai_content(params, request_id)
         
         # Step 3: Process and return the response
-        return process_response(content, request_id)
+        response = process_response(content, request_id)
+        
+        # Add to cache if caching is enabled
+        if cache_enabled:
+            add_to_cache(cache_key(content_request), response)
+        
+        # Update last request and response for conversation state
+        if state_enabled:
+            last_saved_request = content_request
+            last_saved_response = response
+        
+        return response
         
     except HTTPException:
         # Re-raise HTTP exceptions that we've already created

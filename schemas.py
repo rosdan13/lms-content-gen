@@ -3,9 +3,9 @@ from pydantic import BaseModel, Field
 
 # Request Models
 class ContentRequest(BaseModel):
-    topic: str = Field(..., min_length=1, description="The subject matter for content generation")
+    topic: str = Field(..., min_length=1, max_length=10000, description="The subject matter for content generation")
     content_type: str = Field(..., description="Type of content to generate (paragraph, multiple_choice_question, or quiz)")
-    context: Optional[str] = Field(None, description="Additional context or specific instructions")
+    context: Optional[str] = Field(None, max_length=10000, description="Additional context or specific instructions")
    
     model_config = {
     "extra": "forbid",
