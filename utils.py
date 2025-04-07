@@ -8,7 +8,10 @@ from openai import AuthenticationError, RateLimitError, BadRequestError, APIErro
 from cloud_logger import logger
 
 # Initialize OpenAI client
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = openai.OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    timeout=60.0  # Seconds
+)
 
 # Custom exception classes for better error handling
 class ContentGenerationError(Exception):

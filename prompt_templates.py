@@ -22,9 +22,10 @@ The question should:
 - Test understanding rather than mere recall
 - Have exactly 4 options (A, B, C, D)
 - Have exactly one correct answer
+- The correct answer should be randomly placed among the 4 options
 - Have plausible distractors (incorrect options)
 
-Ensure the correct answer is positioned randomly among the other options.
+Do not always place the correct answer first.
 """
 
 # System prompt for quiz generation
@@ -38,11 +39,12 @@ Each question should:
 - Test understanding rather than mere recall
 - Have exactly 4 options (A, B, C, D)
 - Have exactly one correct answer
+- The correct answer should be randomly placed among the 4 options
 - Have plausible distractors (incorrect options)
 
 The questions should cover different aspects or subtopics of the main topic.
 
-Ensure the that for each question the corect answer is positioned randomly among the other options.
+Do not always place the correct answer first.
 """
 
 

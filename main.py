@@ -60,7 +60,7 @@ def check_api_key():
         raise HTTPException(status_code=500, detail="API key not configured")
 
 
-async def prepare_generation_params(content_request, request_id):
+def prepare_generation_params(content_request, request_id):
     """Prepare parameters for content generation"""
     # Get the right prompt fields for the type of content
     system_prompt, user_prompt, schema_name, schema = get_prompt_fields(content_request.content_type)
@@ -141,7 +141,7 @@ async def generate_ai_content(params, request_id):
         raise HTTPException(status_code=422, detail=f"Content generation refused: {str(e)}")
 
 
-async def process_response(content, request_id):
+def process_response(content, request_id):
     """Process and parse the generated content"""
     try:
         response_json = parse_json_response(content)
@@ -185,13 +185,13 @@ async def generate(content_request: ContentRequest, _: None = Depends(check_api_
     
     try:
         # Step 1: Prepare generation parameters
-        params = await prepare_generation_params(content_request, request_id)
+        params = prepare_generation_params(content_request, request_id)
         
         # Step 2: Generate content
         content = await generate_ai_content(params, request_id)
         
         # Step 3: Process and return the response
-        return await process_response(content, request_id)
+        return process_response(content, request_id)
         
     except HTTPException:
         # Re-raise HTTP exceptions that we've already created

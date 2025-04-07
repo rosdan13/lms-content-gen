@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict, Optional
 from google.cloud import logging as cloud_logging
 from google.cloud.logging.handlers import CloudLoggingHandler
-from google.cloud.logging_v2.handlers.transports.sync import SyncTransport
+from google.cloud.logging_v2.handlers.transports.background_thread import BackgroundThreadTransport
 
 # Determine if running in Google Cloud environment
 IS_CLOUD_ENVIRONMENT = os.environ.get('K_SERVICE') is not None
@@ -37,7 +37,7 @@ class CustomCloudLogger:
                 cloud_handler = CloudLoggingHandler(
                     client, 
                     name=self.logger_name,
-                    transport=SyncTransport
+                    transport=BackgroundThreadTransport
                 )
                 self.logger.addHandler(cloud_handler)
                 

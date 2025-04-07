@@ -54,7 +54,7 @@ def get_permitted_types() -> list[str]:
         >>> if user_input not in valid_types:
         >>>     raise ValueError(f"Content type must be one of: {', '.join(valid_types)}")
     """
-    return ["paragraph, multiple_choice_question, quiz"]
+    return ["paragraph", "multiple_choice_question", "quiz"]
 
 def get_context_text(context):
     """Format the context if provided, otherwise return empty string"""
