@@ -123,7 +123,7 @@ lms-content-generator/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/rosdan13/lms-content-generator.git
+   git clone https://github.com/rosdan13/lms-content-gen.git
    cd lms-content-generator
    ```
 
