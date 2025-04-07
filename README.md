@@ -211,7 +211,7 @@ lms-content-generator/
 
 ### GUI Application
 
-**Important Note**: To run the GUI application, you must have a file named `lms_config.txt` in the project directory. This file should contain the URL of the API service.
+**Important Note**: To run the GUI application, you must have a file named `lms_config.txt` in the project directory. This file should contain the URL of the API service. **I will provide you with my own file, so you can easily test cloud functionality.**
 
 #### Linux
 
