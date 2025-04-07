@@ -211,7 +211,7 @@ lms-content-generator/
 
 ### GUI Application
 
-**Important Note**: To run the GUI application, you must have a file named `lms_config.txt` in the project directory. This file should contain the URL of the API service. **I will provide you with my own file, so you can easily test cloud functionality.**
+**Important Note**: To run the GUI application, you must have a file named `lms_config.txt` in the project directory. This file should contain the URL of the API service. The author will provide a pre-configured lms_config.txt file so that cloud functionality can be easily tested without requiring your own deployment.
 
 #### Linux
 
@@ -526,7 +526,7 @@ The service includes comprehensive logging:
 - Content is generated in English by default
 - The expected length of paragraphs is 100-200 words
 - Multiple-choice questions have exactly 4 options
-- Quizzes contain 5 questions by default
+- Quizzes contain a default of 5 questions
 - Cache and conversation state features cannot be used simultaneously
 - API key should be properly secured in production environments
 - For GUI application, `lms_config.txt` must exist in the project directory
