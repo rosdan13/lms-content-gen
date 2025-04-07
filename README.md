@@ -124,7 +124,7 @@ lms-content-generator/
 1. Clone the repository:
    ```bash
    git clone https://github.com/rosdan13/lms-content-gen.git
-   cd lms-content-generator
+   cd lms-content-gen
    ```
 
 2. Create a virtual environment and activate it:
@@ -152,8 +152,8 @@ lms-content-generator/
 
 1. Clone the repository:
    ```powershell
-   git clone https://github.com/yourusername/lms-content-generator.git
-   cd lms-content-generator
+   git clone https://github.com/rosdan13/lms-content-gen.git
+   cd lms-content-gen
    ```
 
 2. Create a virtual environment and activate it:
